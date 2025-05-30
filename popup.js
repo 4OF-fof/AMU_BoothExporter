@@ -55,7 +55,13 @@ document.addEventListener('DOMContentLoaded', function() {
       if (!groupedByAuthor[author]) groupedByAuthor[author] = [];
       groupedByAuthor[author].push(item);
     });
-    textarea.value = JSON.stringify(groupedByAuthor, null, 2);
+    const now = new Date();
+    const dateStr = now.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const exportObj = {
+      lastUpdated: dateStr,
+      authors: groupedByAuthor
+    };
+    textarea.value = JSON.stringify(exportObj, null, 2);
     status.textContent = '';
     saveBtn.disabled = false;
     textarea.style.display = '';
