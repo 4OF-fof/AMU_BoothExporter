@@ -62,6 +62,20 @@ document.addEventListener('DOMContentLoaded', function() {
     saveBtn.style.display = 'none';
   });
 
+  // 保存日時表示用の要素を追加
+  let lastSaved = localStorage.getItem('bpm_save_datetime');
+  let lastSavedDiv = document.getElementById('lastSaved');
+  if (!lastSavedDiv) {
+    lastSavedDiv = document.createElement('div');
+    lastSavedDiv.id = 'lastSaved';
+    status.parentNode.insertBefore(lastSavedDiv, status.nextSibling);
+  }
+  function updateLastSaved() {
+    lastSaved = localStorage.getItem('bpm_save_datetime');
+    lastSavedDiv.textContent = lastSaved ? `最終保存: ${lastSaved}` : '';
+  }
+  updateLastSaved();
+
   saveBtn.addEventListener('click', function() {
     const json = textarea.value;
     const blob = new Blob([json], {type: 'application/json'});
@@ -73,7 +87,15 @@ document.addEventListener('DOMContentLoaded', function() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    status.textContent = '保存しました！';
-    setTimeout(() => status.textContent = '', 1500);
+    // 保存日時を記録
+    const now = new Date();
+    const dateStr = now.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    localStorage.setItem('bpm_save_datetime', dateStr);
+    updateLastSaved();
   });
+  // 保存日時があれば表示
+  const lastSavedTime = localStorage.getItem('bpm_save_datetime');
+  if (lastSavedTime) {
+    status.textContent = `前回保存: ${lastSavedTime}`;
+  }
 });
