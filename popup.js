@@ -1,4 +1,3 @@
-// popupからcontent scriptにメッセージを送り、ダウンロードリンクを取得
 function getLinksFromContentScript(callback, errorCallback) {
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
     if (!tabs[0]) {
@@ -21,8 +20,30 @@ document.addEventListener('DOMContentLoaded', function() {
   const status = document.getElementById('status');
   const saveBtn = document.getElementById('save');
 
+  const openLibraryBtn = document.createElement('button');
+  openLibraryBtn.id = 'openLibrary';
+  openLibraryBtn.textContent = 'ライブラリを開く';
+  openLibraryBtn.style.marginRight = '8px';
+  chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+    const isLibrary = tabs[0] && /^https:\/\/accounts\.booth\.pm\/library/.test(tabs[0].url);
+    if (!isLibrary) {
+      saveBtn.parentNode.insertBefore(openLibraryBtn, saveBtn);
+      textarea.style.display = 'none';
+      copyBtn.style.display = 'none';
+      saveBtn.style.display = 'none';
+      status.style.display = 'none';
+    } else {
+      textarea.style.display = '';
+      copyBtn.style.display = '';
+      saveBtn.style.display = '';
+      status.style.display = '';
+    }
+  });
+  openLibraryBtn.addEventListener('click', function() {
+    chrome.tabs.create({url: 'https://accounts.booth.pm/library'});
+  });
+
   getLinksFromContentScript(function(links) {
-    // JSON形式で整形して表示
     textarea.value = JSON.stringify(links, null, 2);
   }, function(errorMsg) {
     textarea.value = '';
