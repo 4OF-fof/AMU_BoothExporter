@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const groupedByAuthor = {};
     links.forEach(item => {
       const author = item.author;
+      delete item.author;
       if (!groupedByAuthor[author]) groupedByAuthor[author] = [];
       groupedByAuthor[author].push(item);
     });
