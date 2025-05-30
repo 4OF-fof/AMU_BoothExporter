@@ -49,7 +49,13 @@ document.addEventListener('DOMContentLoaded', function() {
       saveBtn.style.display = 'none';
       return;
     }
-    textarea.value = JSON.stringify(links, null, 2);
+    const groupedByAuthor = {};
+    links.forEach(item => {
+      const author = item.author;
+      if (!groupedByAuthor[author]) groupedByAuthor[author] = [];
+      groupedByAuthor[author].push(item);
+    });
+    textarea.value = JSON.stringify(groupedByAuthor, null, 2);
     status.textContent = '';
     saveBtn.disabled = false;
     textarea.style.display = '';
