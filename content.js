@@ -35,8 +35,8 @@
     });
   }
 
-  function getLastPageNumber() {
-    const lastPageA = document.querySelector('a.nav-item.last-page');
+  function getLastPageNumber(doc) {
+    const lastPageA = doc.querySelector('a.nav-item.last-page');
     if (!lastPageA) return 1;
     const href = lastPageA.getAttribute('href');
     const match = href.match(/page=(\d+)/);
@@ -52,13 +52,37 @@
 
   async function collectAllPagesLinks() {
     const baseUrl = location.origin + location.pathname;
-    const lastPage = getLastPageNumber();
     let allRawLinks = [];
+    let firstDoc = document;
+    let lastPage = getLastPageNumber(firstDoc);
     for (let page = 1; page <= lastPage; page++) {
       const url = `${baseUrl}?page=${page}`;
       let doc;
       if (page === 1) {
-        doc = document;
+        doc = firstDoc;
+      } else {
+        doc = await fetchDocument(url);
+      }
+      allRawLinks = allRawLinks.concat(extractLinksFromDocument(doc));
+    }
+    return allRawLinks;
+  }
+
+  async function collectAllPagesLinksForPath(path) {
+    const baseUrl = location.origin + path;
+    let allRawLinks = [];
+    let firstDoc;
+    if (location.pathname === path) {
+      firstDoc = document;
+    } else {
+      firstDoc = await fetchDocument(baseUrl);
+    }
+    let lastPage = getLastPageNumber(firstDoc);
+    for (let page = 1; page <= lastPage; page++) {
+      const url = `${baseUrl}?page=${page}`;
+      let doc;
+      if (page === 1) {
+        doc = firstDoc;
       } else {
         doc = await fetchDocument(url);
       }
@@ -68,7 +92,11 @@
   }
 
   (async () => {
-    const rawLinks = await collectAllPagesLinks();
+    const [libraryLinks, giftsLinks] = await Promise.all([
+      collectAllPagesLinksForPath('/library'),
+      collectAllPagesLinksForPath('/library/gifts')
+    ]);
+    const rawLinks = libraryLinks.concat(giftsLinks);
 
     const grouped = {};
     rawLinks.forEach(item => {
