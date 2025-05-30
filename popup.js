@@ -6,7 +6,7 @@ function getLinksFromContentScript(callback, errorCallback) {
     }
     chrome.tabs.sendMessage(tabs[0].id, {type: 'GET_DOWNLOAD_LINKS'}, function(response) {
       if (chrome.runtime.lastError) {
-        errorCallback('このページではダウンロードリンクを抽出できません。\nBOOTHの商品ページで実行してください。');
+        errorCallback('ページを再読み込みしてください。');
         return;
       }
       callback(response && response.links ? response.links : []);
@@ -16,7 +16,6 @@ function getLinksFromContentScript(callback, errorCallback) {
 
 document.addEventListener('DOMContentLoaded', function() {
   const textarea = document.getElementById('links');
-  const copyBtn = document.getElementById('copy');
   const status = document.getElementById('status');
   const saveBtn = document.getElementById('save');
 
@@ -29,12 +28,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!isLibrary) {
       saveBtn.parentNode.insertBefore(openLibraryBtn, saveBtn);
       textarea.style.display = 'none';
-      copyBtn.style.display = 'none';
       saveBtn.style.display = 'none';
       status.style.display = 'none';
     } else {
       textarea.style.display = '';
-      copyBtn.style.display = '';
       saveBtn.style.display = '';
       status.style.display = '';
     }
@@ -44,18 +41,25 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   getLinksFromContentScript(function(links) {
+    if (!Array.isArray(links) || links.length === 0) {
+      textarea.value = '';
+      status.textContent = '商品情報が取得できませんでした。ページを再読み込みしてください。';
+      saveBtn.disabled = true;
+      textarea.style.display = 'none';
+      saveBtn.style.display = 'none';
+      return;
+    }
     textarea.value = JSON.stringify(links, null, 2);
+    status.textContent = '';
+    saveBtn.disabled = false;
+    textarea.style.display = '';
+    saveBtn.style.display = '';
   }, function(errorMsg) {
     textarea.value = '';
-    status.textContent = errorMsg;
-    copyBtn.disabled = true;
-  });
-
-  copyBtn.addEventListener('click', function() {
-    textarea.select();
-    document.execCommand('copy');
-    status.textContent = 'コピーしました！';
-    setTimeout(() => status.textContent = '', 1500);
+    status.textContent = 'ページを再読み込みしてください。';
+    saveBtn.disabled = true;
+    textarea.style.display = 'none';
+    saveBtn.style.display = 'none';
   });
 
   saveBtn.addEventListener('click', function() {
