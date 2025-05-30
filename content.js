@@ -1,19 +1,21 @@
 (function() {
-  // ページ内のリンク情報を抽出する関数
   function extractLinksFromDocument(doc) {
     const links = Array.from(doc.querySelectorAll('a[href^="https://booth.pm/downloadables/"]'));
     return links.map(a => {
       let fileName = '';
       let packageName = '';
       let author = '';
+      // 商品タイトル: aタグの祖先.mb-16内の .font-bold.typography-16 クラスdivのテキスト
       let titleDiv = a.closest('.mb-16')?.querySelector('.font-bold.typography-16');
       if (titleDiv) {
         packageName = titleDiv.textContent.trim();
       }
+      // ファイル名: aタグの祖先.mt-16内の .typography-14 クラスdivのテキスト
       let fileDiv = a.closest('.mt-16')?.querySelector('.typography-14');
       if (fileDiv) {
         fileName = fileDiv.textContent.trim();
       }
+      // 作者情報: aタグの祖先.mb-16内の .text-text-gray600.typography-14 クラスdivのテキスト
       let mb16 = a.closest('.mb-16');
       if (mb16) {
         let authorDiv = mb16.querySelector('.text-text-gray600.typography-14');
@@ -21,6 +23,7 @@
           author = authorDiv.textContent.trim();
         }
       }
+      // 商品ページURL: aタグの祖先.mb-16内の a[href*="/items/"] のhref属性
       let itemUrl = '';
       if (mb16) {
         let itemLink = mb16.querySelector('a[href*="/items/"]');
@@ -32,7 +35,6 @@
     });
   }
 
-  // 最終ページ番号を取得
   function getLastPageNumber() {
     const lastPageA = document.querySelector('a.nav-item.last-page');
     if (!lastPageA) return 1;
@@ -41,7 +43,6 @@
     return match ? parseInt(match[1], 10) : 1;
   }
 
-  // 指定ページのHTMLを取得し、Documentに変換
   async function fetchDocument(url) {
     const res = await fetch(url);
     const text = await res.text();
@@ -49,7 +50,6 @@
     return parser.parseFromString(text, 'text/html');
   }
 
-  // 全ページのリンク情報を集める
   async function collectAllPagesLinks() {
     const baseUrl = location.origin + location.pathname;
     const lastPage = getLastPageNumber();
@@ -80,7 +80,6 @@
       });
     });
 
-    // 商品画像URLを取得
     async function fetchImageUrls(downloadLinks) {
       const results = await Promise.all(downloadLinks.map(async (entry) => {
         let imageUrl = '';
@@ -94,10 +93,8 @@
               }
             }
           } catch (e) {
-            // 失敗時は空のまま
           }
         }
-        // imageUrlをfilesの前に配置
         return {
           packageName: entry.packageName,
           author: entry.author,
@@ -116,14 +113,11 @@
       files: data.files
     }));
 
-    // 画像URLの取得を必ず待つ
     const linksWithImages = await fetchImageUrls(downloadLinks);
     window.BOOTH_DOWNLOAD_LINKS = linksWithImages;
 
-    // メッセージ受信時に画像URLも含めて返す
     chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       if (msg.type === 'GET_DOWNLOAD_LINKS') {
-        // 必ず画像URL付きで返す
         sendResponse({links: window.BOOTH_DOWNLOAD_LINKS});
       }
     });
