@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const textarea = document.getElementById('links');
   const copyBtn = document.getElementById('copy');
   const status = document.getElementById('status');
+  const saveBtn = document.getElementById('save');
 
   getLinksFromContentScript(function(links) {
     // JSON形式で整形して表示
@@ -33,6 +34,21 @@ document.addEventListener('DOMContentLoaded', function() {
     textarea.select();
     document.execCommand('copy');
     status.textContent = 'コピーしました！';
+    setTimeout(() => status.textContent = '', 1500);
+  });
+
+  saveBtn.addEventListener('click', function() {
+    const json = textarea.value;
+    const blob = new Blob([json], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'BPMlibrary.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    status.textContent = '保存しました！';
     setTimeout(() => status.textContent = '', 1500);
   });
 });
