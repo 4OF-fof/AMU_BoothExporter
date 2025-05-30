@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "BPMExtension",
+  "version": "1.0",
+  "description": "Boothのライブラリから商品情報を取得",
+  "permissions": ["scripting", "activeTab"],
+  "host_permissions": [
+    "https://accounts.booth.pm/library*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://accounts.booth.pm/library*"
+      ],
+      "js": ["content.js"]
+    }
+  ]
+}
