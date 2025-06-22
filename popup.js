@@ -39,7 +39,6 @@ document.addEventListener('DOMContentLoaded', function() {
   openLibraryBtn.addEventListener('click', function() {
     chrome.tabs.create({url: 'https://accounts.booth.pm/library'});
   });
-
   getLinksFromContentScript(function(links) {
     if (!Array.isArray(links) || links.length === 0) {
       textarea.value = '';
@@ -49,19 +48,23 @@ document.addEventListener('DOMContentLoaded', function() {
       saveBtn.style.display = 'none';
       return;
     }
-    const groupedByAuthor = {};
+    
+    // フラットなリスト形式に変換
+    const flatList = [];
     links.forEach(item => {
-      const author = item.author;
-      delete item.author;
-      if (!groupedByAuthor[author]) groupedByAuthor[author] = [];
-      groupedByAuthor[author].push(item);
+      item.files.forEach(file => {
+        flatList.push({
+          itemName: item.packageName,
+          authorName: item.author,
+          itemUrl: item.itemUrl,
+          imageUrl: item.imageUrl,
+          fileName: file.fileName,
+          downloadUrl: file.downloadLink
+        });
+      });
     });
-    const now = new Date();
-    const dateStr = now.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const exportObj = {
-      lastUpdated: dateStr,
-      authors: groupedByAuthor
-    };
+    
+    const exportObj = flatList;
     textarea.value = JSON.stringify(exportObj, null, 2);
     status.textContent = '';
     saveBtn.disabled = false;
@@ -90,12 +93,11 @@ document.addEventListener('DOMContentLoaded', function() {
   updateLastSaved();
 
   saveBtn.addEventListener('click', function() {
-    const json = textarea.value;
-    const blob = new Blob([json], {type: 'application/json'});
+    const json = textarea.value;    const blob = new Blob([json], {type: 'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'BPMlibrary.json';
+    a.download = 'AMU_BoothItem.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

@@ -4,31 +4,30 @@
 
 ## 出力形式
 ```json
-{
-  "lastUpdated": "yyyy/MM/dd HH:mm:ss",
-  "authors": {
-    "作者名1": [
-      {
-        "packageName": "商品タイトル",
-        "itemUrl": "商品ページURL",
-        "imageUrl": "商品画像URL",
-        "files": [
-          {
-            "fileName": "ファイル名",
-            "downloadLink": "ダウンロードリンク"
-          },
-          {
-            "fileName": "ファイル名2",
-            "downloadLink": "ダウンロードリンク2"
-          },
-        ]
-      },
-      {
-        "packageName": "商品タイトル2",
-      },
-    ],
-    "作者名2": [
-    ]
+[
+  {
+    "itemName": "商品タイトル",
+    "authorName": "作者名",
+    "itemUrl": "商品ページURL",
+    "imageUrl": "商品画像URL",
+    "fileName": "ファイル名",
+    "downloadUrl": "ダウンロードリンク"
+  },
+  {
+    "itemName": "商品タイトル",
+    "authorName": "作者名",
+    "itemUrl": "商品ページURL", 
+    "imageUrl": "商品画像URL",
+    "fileName": "ファイル名2",
+    "downloadUrl": "ダウンロードリンク2"
+  },
+  {
+    "itemName": "商品タイトル2",
+    "authorName": "作者名2",
+    "itemUrl": "商品ページURL2",
+    "imageUrl": "商品画像URL2",
+    "fileName": "ファイル名3",
+    "downloadUrl": "ダウンロードリンク3"
   }
-}
+]
 ```
