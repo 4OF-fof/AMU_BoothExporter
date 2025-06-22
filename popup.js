@@ -23,6 +23,12 @@ document.addEventListener('DOMContentLoaded', function() {
   openLibraryBtn.id = 'openLibrary';
   openLibraryBtn.textContent = 'ライブラリを開く';
   openLibraryBtn.style.marginRight = '8px';
+
+  const getDataBtn = document.createElement('button');
+  getDataBtn.id = 'getData';
+  getDataBtn.textContent = 'データを取得';
+  getDataBtn.style.marginRight = '8px';
+
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
     const isLibrary = tabs[0] && /^https:\/\/accounts\.booth\.pm\/library/.test(tabs[0].url);
     if (!isLibrary) {
@@ -31,52 +37,64 @@ document.addEventListener('DOMContentLoaded', function() {
       saveBtn.style.display = 'none';
       status.style.display = 'none';
     } else {
-      textarea.style.display = '';
-      saveBtn.style.display = '';
-      status.style.display = '';
+      saveBtn.parentNode.insertBefore(getDataBtn, saveBtn);
+      textarea.style.display = 'none';
+      saveBtn.style.display = 'none';
+      status.textContent = 'データを取得ボタンを押してください。';
     }
   });
+
   openLibraryBtn.addEventListener('click', function() {
     chrome.tabs.create({url: 'https://accounts.booth.pm/library'});
   });
-  getLinksFromContentScript(function(links) {
-    if (!Array.isArray(links) || links.length === 0) {
+
+  function fetchData() {
+    status.textContent = 'データを取得中...';
+    getDataBtn.disabled = true;
+    
+    getLinksFromContentScript(function(links) {      if (!Array.isArray(links) || links.length === 0) {
+        textarea.value = '';
+        status.textContent = '商品情報が取得できませんでした。ページを再読み込みしてください。';
+        saveBtn.disabled = true;
+        textarea.style.display = 'none';
+        saveBtn.style.display = 'none';
+        getDataBtn.disabled = false;
+        return;
+      }
+      
+      // フラットなリスト形式に変換
+      const flatList = [];
+      links.forEach(item => {
+        item.files.forEach(file => {
+          flatList.push({
+            itemName: item.packageName,
+            authorName: item.author,
+            itemUrl: item.itemUrl,
+            imageUrl: item.imageUrl,
+            fileName: file.fileName,
+            downloadUrl: file.downloadLink
+          });
+        });
+      });
+      
+      const exportObj = flatList;
+      textarea.value = JSON.stringify(exportObj, null, 2);
+      status.textContent = '';
+      saveBtn.disabled = false;
+      textarea.style.display = '';
+      saveBtn.style.display = '';
+      getDataBtn.disabled = false;
+    }, function(errorMsg) {
       textarea.value = '';
-      status.textContent = '商品情報が取得できませんでした。ページを再読み込みしてください。';
+      status.textContent = 'ページを再読み込みしてください。';
       saveBtn.disabled = true;
       textarea.style.display = 'none';
       saveBtn.style.display = 'none';
-      return;
-    }
-    
-    // フラットなリスト形式に変換
-    const flatList = [];
-    links.forEach(item => {
-      item.files.forEach(file => {
-        flatList.push({
-          itemName: item.packageName,
-          authorName: item.author,
-          itemUrl: item.itemUrl,
-          imageUrl: item.imageUrl,
-          fileName: file.fileName,
-          downloadUrl: file.downloadLink
-        });
-      });
+      getDataBtn.disabled = false;
     });
-    
-    const exportObj = flatList;
-    textarea.value = JSON.stringify(exportObj, null, 2);
-    status.textContent = '';
-    saveBtn.disabled = false;
-    textarea.style.display = '';
-    saveBtn.style.display = '';
-  }, function(errorMsg) {
-    textarea.value = '';
-    status.textContent = 'ページを再読み込みしてください。';
-    saveBtn.disabled = true;
-    textarea.style.display = 'none';
-    saveBtn.style.display = 'none';
-  });
+  }
+
+  getDataBtn.addEventListener('click', fetchData);
 
   // 保存日時表示用の要素を追加
   let lastSaved = localStorage.getItem('bpm_save_datetime');
@@ -93,7 +111,8 @@ document.addEventListener('DOMContentLoaded', function() {
   updateLastSaved();
 
   saveBtn.addEventListener('click', function() {
-    const json = textarea.value;    const blob = new Blob([json], {type: 'application/json'});
+    const json = textarea.value;
+    const blob = new Blob([json], {type: 'application/json'});
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
