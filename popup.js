@@ -61,13 +61,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
               });
             });
-            let response = await getItemJson();
-            let itemInfo = { itemName: '', authorName: '', imageUrl: '' };
+            let response = await getItemJson();            let itemInfo = { itemName: '', authorName: '', imageUrl: '' };
             if (response && response.success && response.json) {
               const json = response.json;
-              itemInfo.itemName = json.name || '';
+              itemInfo.itemName = json.name || item.packageName || '';
               itemInfo.authorName = (json.shop && json.shop.name) ? json.shop.name : '';
               itemInfo.imageUrl = (json.images && json.images[0] && json.images[0].original) ? json.images[0].original : '';
+            } else {
+              // JSONが取得できない場合はpackageNameを使用
+              itemInfo.itemName = item.packageName || '';
             }
             for (const file of item.files) {
               flatList.push({

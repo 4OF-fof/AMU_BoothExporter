@@ -7,12 +7,18 @@
       const fileName = fileDiv ? fileDiv.textContent.trim() : '';
       // 商品ページURL取得
       let itemUrl = '';
+      let packageName = '';
       const mb16 = a.closest('.mb-16');
       if (mb16) {
         const itemLink = mb16.querySelector('a[href*="/items/"]');
         if (itemLink) itemUrl = itemLink.href;
+        // 商品タイトル取得
+        let titleDiv = mb16.querySelector('.font-bold.typography-16');
+        if (titleDiv) {
+          packageName = titleDiv.textContent.trim();
+        }
       }
-      return { itemUrl, fileName, downloadUrl: a.href };
+      return { itemUrl, fileName, downloadUrl: a.href, packageName };
     });
   }
 
@@ -54,19 +60,43 @@
     const grouped = {};
     rawLinks.forEach(item => {
       if (!item.itemUrl) return;
-      if (!grouped[item.itemUrl]) grouped[item.itemUrl] = [];
-      grouped[item.itemUrl].push({ fileName: item.fileName, downloadUrl: item.downloadUrl });
+      if (!grouped[item.itemUrl]) {
+        grouped[item.itemUrl] = {
+          packageName: item.packageName || '',
+          files: []
+        };
+      }
+      grouped[item.itemUrl].files.push({ fileName: item.fileName, downloadUrl: item.downloadUrl });
     });
-    return Object.entries(grouped).map(([itemUrl, files]) => ({ itemUrl, files }));
+    return Object.entries(grouped).map(([itemUrl, data]) => ({ 
+      itemUrl, 
+      packageName: data.packageName,
+      files: data.files 
+    }));
   }
-
   // --- メッセージリスナー ---
   let boothLinksCache = null;
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     switch (msg.type) {
       case 'GET_DOWNLOAD_LINKS':
         (async () => {
-          if (!boothLinksCache) boothLinksCache = await getAllGroupedLinks();
+          if (!boothLinksCache) {
+            boothLinksCache = await getAllGroupedLinks();
+            // JSONでタイトル情報を上書き
+            for (let item of boothLinksCache) {
+              try {
+                const res = await fetch(item.itemUrl + '.json');
+                if (res.ok) {
+                  const json = await res.json();
+                  if (json.name) {
+                    item.packageName = json.name;
+                  }
+                }
+              } catch (e) {
+                // JSON取得に失敗した場合はそのまま
+              }
+            }
+          }
           sendResponse({ links: boothLinksCache });
         })();
         return true; // async response
