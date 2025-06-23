@@ -76,12 +76,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
               });
             });
-            let response = await getItemJson();            let itemInfo = { itemName: '', authorName: '', imageUrl: '' };
+            let response = await getItemJson();            let itemInfo = { itemName: '', authorName: '', imageUrl: '', description: '' };
             if (response && response.success && response.json) {
               const json = response.json;
-              itemInfo.itemName = json.name || item.packageName || '';
+              itemInfo.itemName = json.name || '';
               itemInfo.authorName = (json.shop && json.shop.name) ? json.shop.name : '';
               itemInfo.imageUrl = (json.images && json.images[0] && json.images[0].original) ? json.images[0].original : '';
+              itemInfo.description = json.description || '';
             } else {
               // JSONが取得できない場合はpackageNameを使用
               itemInfo.itemName = item.packageName || '';
@@ -92,6 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 authorName: itemInfo.authorName,
                 itemUrl: item.itemUrl,
                 imageUrl: itemInfo.imageUrl,
+                description: itemInfo.description,
                 fileName: file.fileName,
                 downloadUrl: file.downloadUrl
               });
