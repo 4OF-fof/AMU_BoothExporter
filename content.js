@@ -45,6 +45,8 @@
       const url = `${baseUrl}?page=${page}`;
       const doc = (page === 1) ? firstDoc : await fetchDocument(url);
       allLinks = allLinks.concat(extractLinksFromDocument(doc));
+      // 進捗をpopupに通知
+      chrome.runtime.sendMessage({ type: 'SCRAPING_PROGRESS', path, page, lastPage });
     }
     return allLinks;
   }

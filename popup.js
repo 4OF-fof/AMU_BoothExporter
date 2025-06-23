@@ -14,6 +14,21 @@ function getLinksFromContentScript(callback, errorCallback) {
   });
 }
 
+// content scriptからの進捗メッセージを受信して表示
+chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+  if (message.type === 'SCRAPING_PROGRESS') {
+    let progressElem = document.getElementById('progressInfo');
+    if (!progressElem) {
+      progressElem = document.createElement('div');
+      progressElem.id = 'progressInfo';
+      progressElem.style.margin = '12px 0';
+      progressElem.style.fontSize = '0.95em';
+      document.body.appendChild(progressElem);
+    }
+    progressElem.textContent = `所有アセットをリストアップ… (${message.page} / ${message.lastPage})`;
+  }
+});
+
 document.addEventListener('DOMContentLoaded', function() {
   chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
     const isLibrary = tabs[0] && tabs[0].url && tabs[0].url.startsWith('https://accounts.booth.pm/library');
