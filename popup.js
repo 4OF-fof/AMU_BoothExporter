@@ -27,17 +27,32 @@ document.addEventListener('DOMContentLoaded', function() {
       getDataBtn.addEventListener('click', async function() {
         getDataBtn.disabled = true;
         getDataBtn.textContent = 'データ取得中...';
+        // 進捗表示用の要素を追加
+        let progressElem = document.getElementById('progressInfo');
+        if (!progressElem) {
+          progressElem = document.createElement('div');
+          progressElem.id = 'progressInfo';
+          progressElem.style.margin = '12px 0';
+          progressElem.style.fontSize = '0.95em';
+          document.body.appendChild(progressElem);
+        }
         getLinksFromContentScript(async function(links) {
           if (!Array.isArray(links) || links.length === 0) {
             alert('商品情報が取得できませんでした。ページを再読み込みしてください。');
             getDataBtn.disabled = false;
             getDataBtn.textContent = 'データを取得';
+            if (progressElem) progressElem.textContent = '';
             return;
           }
           // itemUrlごとにjsonを取得し、flatListを作成
           const flatList = [];
-          for (const item of links) {
+          for (let i = 0; i < links.length; i++) {
+            const item = links[i];
             if (!item.itemUrl) continue;
+            // 進捗表示
+            progressElem.textContent = `データ取得中... (${i + 1} / ${links.length})`;
+            // 0.1秒待機
+            await new Promise(resolve => setTimeout(resolve, 100));
             // content script経由でitemUrl.jsonを取得
             const getItemJson = () => new Promise(resolve => {
               chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
@@ -65,6 +80,8 @@ document.addEventListener('DOMContentLoaded', function() {
               });
             }
           }
+          // 進捗クリア
+          progressElem.textContent = '';
           // JSONダウンロード
           const json = JSON.stringify(flatList, null, 2);
           const blob = new Blob([json], {type: 'application/json'});
@@ -76,14 +93,6 @@ document.addEventListener('DOMContentLoaded', function() {
           a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
-          // 保存日時をlocalStorageに記録
-          const now = new Date();
-          const dateStr = now.toLocaleString('ja-JP', {
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit', second: '2-digit'
-          });
-          localStorage.setItem('bpm_save_datetime', dateStr);
-          getDataBtn.disabled = false;
           getDataBtn.textContent = 'データを取得';
         }, function(errorMsg) {
           alert(errorMsg || 'ページを再読み込みしてください。');
