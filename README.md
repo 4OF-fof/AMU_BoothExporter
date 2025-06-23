@@ -2,6 +2,14 @@
 
 `https://accounts.booth.pm/library`、`https://accounts.booth.pm/library/gifts`にある商品情報を取得してjsonに纏めるだけ
 
+## データ取得方法
+- 画面からは `itemUrl`, `fileName`, `downloadUrl` のみを抽出します。
+- 各 `itemUrl` の末尾に `.json` を付与してアクセスし、
+  - `name` から `itemName`
+  - `shop.name` から `authorName`
+  - `images[0].original` から `imageUrl`
+  を抽出します。
+
 ## 出力形式
 ```json
 [

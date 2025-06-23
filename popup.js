@@ -51,8 +51,9 @@ document.addEventListener('DOMContentLoaded', function() {
   function fetchData() {
     status.textContent = 'データを取得中...';
     getDataBtn.disabled = true;
-    
-    getLinksFromContentScript(function(links) {      if (!Array.isArray(links) || links.length === 0) {
+    getLinksFromContentScript(async function(links) {
+      console.log('受信links:', links);
+      if (!Array.isArray(links) || links.length === 0) {
         textarea.value = '';
         status.textContent = '商品情報が取得できませんでした。ページを再読み込みしてください。';
         saveBtn.disabled = true;
@@ -61,22 +62,43 @@ document.addEventListener('DOMContentLoaded', function() {
         getDataBtn.disabled = false;
         return;
       }
-      
-      // フラットなリスト形式に変換
+      // itemUrlごとにjsonを取得し、flatListを作成
       const flatList = [];
-      links.forEach(item => {
-        item.files.forEach(file => {
-          flatList.push({
-            itemName: item.packageName,
-            authorName: item.author,
-            itemUrl: item.itemUrl,
-            imageUrl: item.imageUrl,
-            fileName: file.fileName,
-            downloadUrl: file.downloadLink
+      for (const item of links) {
+        console.log('itemUrl:', item.itemUrl);
+        let itemInfo = { itemName: '', authorName: '', imageUrl: '' };
+        if (!item.itemUrl) {
+          console.warn('itemUrlが空です', item);
+          continue;
+        }
+        // content script経由でitemUrl.jsonを取得
+        const getItemJson = () => new Promise(resolve => {
+          chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+            chrome.tabs.sendMessage(tabs[0].id, {type: 'FETCH_ITEM_JSON', itemUrl: item.itemUrl}, function(response) {
+              resolve(response);
+            });
           });
         });
-      });
-      
+        let response = await getItemJson();
+        if (response && response.success && response.json) {
+          const json = response.json;
+          itemInfo.itemName = json.name || '';
+          itemInfo.authorName = (json.shop && json.shop.name) ? json.shop.name : '';
+          itemInfo.imageUrl = (json.images && json.images[0] && json.images[0].original) ? json.images[0].original : '';
+        } else {
+          console.error('content script fetch失敗:', response && response.error, item.itemUrl + '.json');
+        }
+        for (const file of item.files) {
+          flatList.push({
+            itemName: itemInfo.itemName,
+            authorName: itemInfo.authorName,
+            itemUrl: item.itemUrl,
+            imageUrl: itemInfo.imageUrl,
+            fileName: file.fileName,
+            downloadUrl: file.downloadUrl
+          });
+        }
+      }
       const exportObj = flatList;
       textarea.value = JSON.stringify(exportObj, null, 2);
       status.textContent = '';
