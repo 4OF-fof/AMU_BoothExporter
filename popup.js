@@ -119,7 +119,6 @@ document.addEventListener('DOMContentLoaded', function() {
   getDataBtn.addEventListener('click', fetchData);
 
   // 保存日時表示用の要素を追加
-  let lastSaved = localStorage.getItem('bpm_save_datetime');
   let lastSavedDiv = document.getElementById('lastSaved');
   if (!lastSavedDiv) {
     lastSavedDiv = document.createElement('div');
@@ -127,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
     status.parentNode.insertBefore(lastSavedDiv, status.nextSibling);
   }
   function updateLastSaved() {
-    lastSaved = localStorage.getItem('bpm_save_datetime');
+    const lastSaved = getLastSavedDatetime();
     lastSavedDiv.textContent = lastSaved ? `最終保存: ${lastSaved}` : '';
   }
   updateLastSaved();
@@ -144,14 +143,25 @@ document.addEventListener('DOMContentLoaded', function() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     // 保存日時を記録
-    const now = new Date();
-    const dateStr = now.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    localStorage.setItem('bpm_save_datetime', dateStr);
+    const dateStr = getNowJpDatetime();
+    setLastSavedDatetime(dateStr);
     updateLastSaved();
   });
-  // 保存日時があれば表示
-  const lastSavedTime = localStorage.getItem('bpm_save_datetime');
-  if (lastSavedTime) {
-    status.textContent = `前回保存: ${lastSavedTime}`;
-  }
 });
+
+// Utility: localStorageから保存日時を取得
+function getLastSavedDatetime() {
+  return localStorage.getItem('bpm_save_datetime');
+}
+// Utility: 保存日時をlocalStorageに記録
+function setLastSavedDatetime(dateStr) {
+  localStorage.setItem('bpm_save_datetime', dateStr);
+}
+// Utility: 日時を日本語形式で返す
+function getNowJpDatetime() {
+  const now = new Date();
+  return now.toLocaleString('ja-JP', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
+}
